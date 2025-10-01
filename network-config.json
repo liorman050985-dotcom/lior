@@ -1,0 +1,49 @@
+{
+  "network": {
+    "port": 3000,
+    "fallback_ports": [3001, 3002, 3003, 8080, 8000],
+    "host": "0.0.0.0",
+    "cors": {
+      "enabled": true,
+      "allowed_origins": ["*"],
+      "methods": ["GET", "POST", "PUT", "DELETE"]
+    }
+  },
+  "modes": {
+    "local_only": {
+      "description": "משחק מקומי בלבד - רק על המחשב הזה",
+      "host": "localhost",
+      "port": 3000,
+      "allow_external": false
+    },
+    "lan_access": {
+      "description": "גישה ברשת מקומית (LAN) - שחקנים ברשת יכולים להתחבר",
+      "host": "0.0.0.0",
+      "port": 3000,
+      "allow_external": true
+    },
+    "development": {
+      "description": "מצב פיתוח עם יכולות debug",
+      "host": "0.0.0.0",
+      "port": 3000,
+      "debug": true,
+      "auto_reload": true
+    }
+  },
+  "security": {
+    "max_players": 50,
+    "rate_limiting": {
+      "enabled": true,
+      "requests_per_minute": 100
+    },
+    "chat_filter": {
+      "enabled": true,
+      "max_message_length": 200
+    }
+  },
+  "performance": {
+    "heartbeat_interval": 30000,
+    "cleanup_interval": 30000,
+    "inactive_timeout": 60000
+  }
+}
