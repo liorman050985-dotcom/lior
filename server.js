@@ -9,9 +9,13 @@ const app = express();
 const server = http.createServer(app);
 const io = socketIo(server, {
   cors: {
-    origin: config.network.cors.allowed_origins,
-    methods: config.network.cors.methods
-  }
+    origin: "*",
+    methods: ["GET", "POST"],
+    allowedHeaders: ["*"],
+    credentials: true
+  },
+  transports: ['websocket', 'polling'],
+  allowEIO3: true
 });
 
 // Serve static files
@@ -300,81 +304,15 @@ setInterval(() => {
   }
 }, 60000); // Every minute
 
-// Enhanced server startup with network detection
-async function startServer() {
-  const PORT = process.env.PORT || config.network.port;
-  const HOST = process.env.HOST || config.network.host;
-  
-  try {
-    // Check if port is available
-    const isPortAvailable = await NetworkUtils.isPortAvailable(PORT, HOST);
-    
-    if (!isPortAvailable) {
-      console.log(`⚠️  פורט ${PORT} תפוס, מחפש חלופה...`);
-      
-      const alternativePort = await NetworkUtils.findAvailablePort(
-        config.network.fallback_ports,
-        HOST
-      );
-      
-      if (alternativePort) {
-        console.log(`✅ נמצא פורט חלופי: ${alternativePort}`);
-        PORT = alternativePort;
-      } else {
-        console.error('❌ לא נמצא פורט זמין');
-        process.exit(1);
-      }
-    }
-    
-    server.listen(PORT, HOST, () => {
-      console.log('');
-      console.log('🚀 ==========================================');
-      console.log(`🎮 שרת המשחק פועל בהצלחה!`);
-      console.log(`📍 פורט: ${PORT}`);
-      console.log(`🏠 מארח: ${HOST}`);
-      console.log('🌍 גרסה אונליין - מרובה משתתפים');
-      console.log('🚀 ==========================================');
-      console.log('');
-      
-      // Display network information
-      NetworkUtils.displayNetworkInfo(PORT);
-      console.log('');
-      
-      console.log('🎯 מוכן לשחקנים!');
-      console.log('💡 לעצירת השרת: לחץ Ctrl+C');
-      console.log('🔧 לבדיקת רשת: node test-network.js');
-      console.log('');
-    });
-    
-    // Enhanced error handling
-    server.on('error', (error) => {
-      if (error.code === 'EADDRINUSE') {
-        console.error(`❌ פורט ${PORT} כבר בשימוש`);
-        console.log('🔍 מנסה למצוא פורט חלופי...');
-        
-        NetworkUtils.findAvailablePort(
-          config.network.fallback_ports,
-          HOST
-        ).then(altPort => {
-          if (altPort) {
-            console.log(`✅ פורט חלופי נמצא: ${altPort}`);
-            server.listen(altPort, HOST);
-          } else {
-            console.error('❌ לא נמצא פורט זמין');
-            process.exit(1);
-          }
-        });
-      } else {
-        console.error('❌ שגיאת שרת:', error.message);
-        process.exit(1);
-      }
-    });
-    
-  } catch (error) {
-    console.error('❌ שגיאה בהפעלת השרת:', error.message);
-    process.exit(1);
-  }
-}
+// Simple server startup for Render
+const PORT = process.env.PORT || 3000;
+const HOST = process.env.NODE_ENV === 'production' ? '0.0.0.0' : 'localhost';
 
-// Start the server
-startServer();
+server.listen(PORT, () => {
+  console.log('🚀 ==========================================');
+  console.log(`🎮 Virtual World Multiplayer Server Started!`);
+  console.log(`📍 Port: ${PORT}`);
+  console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log('🚀 ==========================================');
+  console.log('🎯 Ready for players from around the world!');
+});
