@@ -1851,6 +1851,119 @@
       animation: bannerSlideOut 0.3s ease-in;
     }
     
+    /* Gift Collected Modal */
+    #giftCollectedModal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.8);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 2000;
+      animation: fadeIn 0.3s ease;
+    }
+    #giftCollectedModal.open { display: flex; }
+    #giftCollectedContent {
+      background: linear-gradient(135deg, #2a2e45, #1f2238);
+      border: 3px solid #ffd700;
+      border-radius: 20px;
+      padding: 30px;
+      max-width: 400px;
+      width: 90vw;
+      text-align: center;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(255, 215, 0, 0.3);
+      animation: bounceIn 0.5s ease;
+      position: relative;
+    }
+    #giftCollectedHeader {
+      margin-bottom: 20px;
+    }
+    #giftCollectedTitle {
+      font-size: 24px;
+      font-weight: bold;
+      color: #ffd700;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    #giftCollectedInfo {
+      margin-bottom: 25px;
+    }
+    #giftIcon {
+      font-size: 64px;
+      margin-bottom: 15px;
+      animation: pulse 1s ease-in-out infinite;
+      filter: drop-shadow(0 4px 8px rgba(255, 215, 0, 0.4));
+    }
+    #giftName {
+      font-size: 20px;
+      font-weight: bold;
+      color: #fff;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    }
+    #giftDescription {
+      font-size: 14px;
+      color: #bbb;
+      margin-bottom: 10px;
+    }
+    #confirmGiftCollection {
+      background: linear-gradient(135deg, #4CAF50, #45a049);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+      min-width: 120px;
+    }
+    #confirmGiftCollection:hover {
+      background: linear-gradient(135deg, #45a049, #3d8b40);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 16px rgba(76, 175, 80, 0.4);
+    }
+    #confirmGiftCollection:active {
+      transform: translateY(0px);
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+    
+    @keyframes bounceIn {
+      0% {
+        opacity: 0;
+        transform: scale(0.3) translateY(-100px);
+      }
+      50% {
+        opacity: 1;
+        transform: scale(1.05);
+      }
+      70% {
+        transform: scale(0.95);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+    
+    @keyframes pulse {
+      0%, 100% {
+        transform: scale(1);
+      }
+      50% {
+        transform: scale(1.1);
+      }
+    }
+
     /* Quick Mission Modal */
     #quickMissionModal {
       position: fixed;
@@ -2372,6 +2485,30 @@
     <div id="globalMessageBanner">
       <div id="globalMessageText"></div>
       <button id="dismissGlobalMessage">אישור</button>
+    </div>
+  </div>
+
+  <!-- Gift Collected Modal -->
+  <div id="giftCollectedModal">
+    <div id="giftCollectedContent">
+      <div id="giftCollectedHeader">
+        <div id="giftCollectedTitle">
+          <span>🎁</span>
+          <span>אספת מתנה!</span>
+        </div>
+      </div>
+      
+      <div id="giftCollectedBody">
+        <div id="giftCollectedInfo">
+          <div id="giftIcon">🎁</div>
+          <div id="giftName">פריט מיוחד</div>
+          <div id="giftDescription">קיבלת פריט חדש!</div>
+        </div>
+        
+        <div id="giftCollectedButtons">
+          <button id="confirmGiftCollection">אישור</button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -4247,6 +4384,13 @@
       const explorerBtn = document.getElementById('explorerBtn');
       const explorerMessageBtn = document.getElementById('explorerMessageBtn');
       
+      // Gift Collected Modal elements
+      const giftCollectedModal = document.getElementById('giftCollectedModal');
+      const confirmGiftCollectionBtn = document.getElementById('confirmGiftCollection');
+      const giftIcon = document.getElementById('giftIcon');
+      const giftName = document.getElementById('giftName');
+      const giftDescription = document.getElementById('giftDescription');
+      
       // Global Messages (Explorer feature)
       const globalMessageModal = document.getElementById('globalMessageModal');
       const globalMessageInput = document.getElementById('globalMessageInput');
@@ -4668,6 +4812,43 @@
         }
         requestAnimationFrame(anim);
       }
+      
+      // Gift collection modal functions
+      function showGiftCollectedModal(item) {
+        if (!item) return;
+        
+        // Update modal content
+        giftIcon.textContent = item.icon || '🎁';
+        giftName.textContent = item.name || 'פריט מיוחד';
+        giftDescription.textContent = `אספת ${item.name}! ${item.desc || ''}`;
+        
+        // Show modal
+        giftCollectedModal.classList.add('open');
+        
+        // Play collection sound
+        if (audioManager && audioManager.initialized) {
+          audioManager.playPickupSound();
+        }
+      }
+      
+      function hideGiftCollectedModal() {
+        giftCollectedModal.classList.remove('open');
+      }
+      
+      // Event listener for confirm button
+      confirmGiftCollectionBtn.addEventListener('click', () => {
+        hideGiftCollectedModal();
+      });
+      
+      // Close modal when clicking outside
+      giftCollectedModal.addEventListener('click', (e) => {
+        if (e.target === giftCollectedModal) {
+          hideGiftCollectedModal();
+        }
+      });
+      
+      // Close modal with ESC key (integrated with existing ESC handler)
+      // Note: The existing ESC handler will be updated to include this modal
 
       adminBtn.addEventListener('click', () => {
         adminMode = !adminMode;
@@ -4829,7 +5010,9 @@
       // Close modals with ESC key
       document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-          if (globalMessageModal.classList.contains('open')) {
+          if (giftCollectedModal.classList.contains('open')) {
+            hideGiftCollectedModal();
+          } else if (globalMessageModal.classList.contains('open')) {
             globalMessageModal.classList.remove('open');
           } else if (equipmentModal.classList.contains('open')) {
             equipmentModal.classList.remove('open');
@@ -7452,18 +7635,31 @@
           if (d < 36) {
             gift.picked = true;
             ownedItems.add(gift.itemId);
-            // Show floating text at screen position
-            const camX = player.x - innerWidth / 2;
-            const camY = player.y - innerHeight / 2;
-            const screenX = gift.x - camX;
-            const screenY = gift.y - camY - 20;
+            
+            // Find item data and show gift collection modal
             const item = itemCatalog.find(i => i.id === gift.itemId);
-              showPickupText(`אספת: ${item ? item.name : 'חפץ'}`, screenX, screenY);
-              audioManager.playPickupSound(); // Play pickup sound
-              onGiftCollected(gift.itemId);
-              renderInventory();
-              // Auto-save when collecting items
-              saveGame();
+            if (item) {
+              // Show the new gift collected modal instead of floating text
+              showGiftCollectedModal(item);
+            } else {
+              // Fallback for items not found in catalog
+              const camX = player.x - innerWidth / 2;
+              const camY = player.y - innerHeight / 2;
+              const screenX = gift.x - camX;
+              const screenY = gift.y - camY - 20;
+              showPickupText(`אספת: חפץ מיוחד`, screenX, screenY);
+            }
+            
+            // Update game state
+            onGiftCollected(gift.itemId);
+            renderInventory();
+            // Auto-save when collecting items
+            saveGame();
+            
+            // Send to online server if connected
+            if (typeof collectOnlineGift === 'function') {
+              collectOnlineGift(gift);
+            }
           }
         }
 
@@ -7786,6 +7982,15 @@
 
           // Chat bubble
           drawChat(px, py);
+          
+          // Draw other online players (if connected)
+          try {
+            if (typeof drawOnlinePlayers === 'function' && typeof isOnline !== 'undefined' && isOnline) {
+              drawOnlinePlayers(camX, camY);
+            }
+          } catch (e) {
+            console.warn('Error drawing online players:', e);
+          }
         }
         
         // Restore zoom transformation
@@ -11601,10 +11806,12 @@
     
     // Initialize online connection
     function initializeOnline() {
+      console.log('🚀 initializeOnline called!');
       try {
+        console.log('🔗 Creating socket connection...');
         socket = io();
         setupSocketListeners();
-        console.log('🌍 מתחבר למשחק אונליין...');
+        console.log('✅ Socket created successfully, trying to connect...');
       } catch (error) {
         console.log('❌ לא ניתן להתחבר למשחק אונליין:', error);
         updateConnectionStatus(false, 'אופליין');
@@ -11614,12 +11821,12 @@
     function setupSocketListeners() {
       // Connection established
       socket.on('connect', () => {
-        console.log('✅ התחברת למשחק אונליין!');
+        console.log('✅ דךנחברנו לשרת המשחק!');
         isOnline = true;
         updateConnectionStatus(true, 'מחובר');
         
         // Join the game
-        socket.emit('playerJoin', {
+        const playerData = {
           name: player.name,
           x: player.x,
           y: player.y,
@@ -11629,7 +11836,9 @@
           explorerMode: explorerMode,
           equipped: equipped,
           ownedItems: Array.from(ownedItems)
-        });
+        };
+        console.log('📤 שולח playerJoin עם נתונים:', playerData);
+        socket.emit('playerJoin', playerData);
         
         showPickupText('🌍 התחברת למשחק אונליין!', innerWidth/2, 100);
       });
@@ -11653,7 +11862,7 @@
           onlinePlayers.set(playerData.id, playerData);
         });
         
-        // Update online count
+        // Update online count (server sends correct count including this player)
         updateOnlineCount(gameState.players.length + 1); // +1 for local player
         
         // Update chat messages
@@ -11666,10 +11875,11 @@
       
       // New player joined
       socket.on('playerJoined', (playerData) => {
-        console.log('👋 שחקן חדש הצטרף:', playerData.name);
+        console.log('🆕 שחקן חדש הצטרף:', playerData.name, 'ID:', playerData.id);
+        console.log('📊 כל הנתונים של השחקן החדש:', playerData);
         onlinePlayers.set(playerData.id, playerData);
-        updateOnlineCount(onlinePlayers.size + 1);
-        showPickupText(`👋 ${playerData.name} הצטרף למשחק`, innerWidth/2, innerHeight - 100);
+        console.log('📋 סה"כ שחקנים אחרי הוספה:', onlinePlayers.size);
+        showPickupText(`🎮 ${playerData.name} הצטרף למשחק!`, innerWidth/2, innerHeight - 100);
       });
       
       // Player left
@@ -11680,7 +11890,6 @@
           showPickupText(`👋 ${player.name} עזב את המשחק`, innerWidth/2, innerHeight - 100);
         }
         onlinePlayers.delete(playerId);
-        updateOnlineCount(onlinePlayers.size + 1);
       });
       
       // Player moved
@@ -11764,6 +11973,13 @@
         showPickupText(`🌍 ${data.senderName}: ${data.message}`, innerWidth/2, 50);
       });
       
+      // Player count update from server
+      socket.on('playerCountUpdate', (playerCount) => {
+        console.log('📊 עדכון מספר שחקנים מהשרת:', playerCount);
+        console.log('🗓️ מספר שחקנים בזיכרון מקומי:', onlinePlayers.size);
+        updateOnlineCount(playerCount);
+      });
+      
       // Heartbeat
       socket.on('heartbeat', (timestamp) => {
         // Keep connection alive
@@ -11786,7 +12002,14 @@
     
     // Update online player count
     function updateOnlineCount(count) {
-      document.getElementById('onlineCount').textContent = count;
+      console.log('📊 מעדכן מציג מספר שחקנים ל-', count);
+      const onlineCountEl = document.getElementById('onlineCount');
+      if (onlineCountEl) {
+        onlineCountEl.textContent = count;
+        console.log('✅ עדכן מציג ל-', count, 'שחקנים');
+      } else {
+        console.error('❌ לא נמצא element של onlineCount!');
+      }
     }
     
     // Send movement updates to server
@@ -11854,8 +12077,13 @@
     
     // Draw online players
     function drawOnlinePlayers(camX, camY) {
-      if (!isOnline) return;
+      console.log('🎮 drawOnlinePlayers called:', { isOnline, onlinePlayersCount: onlinePlayers.size });
+      if (!isOnline) {
+        console.log('❌ Not online, skipping draw');
+        return;
+      }
       
+      console.log('🎭 Drawing', onlinePlayers.size, 'online players');
       for (const [playerId, playerData] of onlinePlayers.entries()) {
         const sx = playerData.x - camX;
         const sy = playerData.y - camY;
@@ -11907,61 +12135,28 @@
       }
     }
     
-    // Override original functions to include online functionality
-    const originalSendChat = sendChat;
-    sendChat = function() {
-      const text = chatInput.value.trim();
-      if (text) {
-        // Send to online players
-        sendOnlineChat(text);
-        
-        // Keep original local functionality
-        lastMessage = text;
-        messageTimer = MESSAGE_SHOW_TIME;
-        messageWasAdmin = adminMode;
-        chatInput.value = '';
-      }
-      chatInput.blur();
-    };
     
     // Override coin collection
     const originalCoinCollection = function() {
       // This will be integrated into the main coin collection code
     };
     
-    // Modify the main update function to send movement updates
-    const originalUpdate = update;
-    function updateWithOnline(dt) {
-      originalUpdate(dt);
-      
-      // Send movement updates if player moved
-      const speed = Math.hypot(player.vx, player.vy);
-      if (speed > 1 && isOnline) {
-        sendMovementUpdate();
-      }
-    }
     
-    // Modify the main draw function to include online players
-    const originalDraw = draw;
-    function drawWithOnline() {
-      originalDraw();
-      
-      // Draw online players
-      const camX = player.x - innerWidth / 2;
-      const camY = player.y - innerHeight / 2;
-      drawOnlinePlayers(camX, camY);
-    }
     
-    // Replace the main functions
-    update = updateWithOnline;
-    draw = drawWithOnline;
-    
-    // Initialize online connection on page load
+    // Initialize online connection after game starts
     window.addEventListener('load', () => {
-      // Wait a bit for the game to initialize
-      setTimeout(() => {
-        initializeOnline();
-      }, 1000);
+      console.log('🔄 Page loaded, waiting for game initialization...');
+      // Wait for game initialization
+      const waitForGame = () => {
+        if (typeof player !== 'undefined' && player.name) {
+          console.log('🎮 Game ready, initializing online...');
+          initializeOnline();
+        } else {
+          console.log('⏳ Waiting for game to initialize...');
+          setTimeout(waitForGame, 500);
+        }
+      };
+      setTimeout(waitForGame, 1000);
     });
     
     // Handle page unload

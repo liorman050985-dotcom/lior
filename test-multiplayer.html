@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>בדיקת מולטי פלייר</title>
+    <meta charset="utf-8">
+    <style>
+        body { font-family: Arial; background: #222; color: white; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .status { background: #333; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .online { background: #2a5d2a; }
+        .offline { background: #5d2a2a; }
+        .test-btn { background: #4CAF50; color: white; border: none; padding: 10px 20px; margin: 5px; cursor: pointer; border-radius: 3px; }
+        .test-btn:hover { background: #45a049; }
+        #log { background: #111; padding: 10px; height: 300px; overflow-y: auto; font-family: monospace; border: 1px solid #444; }
+    </style>
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 בדיקת מערכת רב-משתתפים</h1>
+        
+        <div id="status" class="status offline">
+            <strong>סטטוס:</strong> <span id="statusText">לא מחובר</span>
+        </div>
+        
+        <div class="status">
+            <strong>מספר שחקנים מחוברים:</strong> <span id="playerCount">0</span>
+        </div>
+        
+        <div>
+            <button class="test-btn" onclick="connectToServer()">התחבר לשרת</button>
+            <button class="test-btn" onclick="disconnectFromServer()">התנתק מהשרת</button>
+            <button class="test-btn" onclick="sendTestMessage()">שלח הודעה לבדיקה</button>
+            <button class="test-btn" onclick="clearLog()">נקה לוג</button>
+        </div>
+        
+        <div>
+            <input type="text" id="testMessage" placeholder="הקלד הודעה לבדיקה..." style="width: 300px; padding: 8px; margin: 5px;">
+            <input type="text" id="playerName" placeholder="שם שחקן" value="בודק1" style="width: 150px; padding: 8px; margin: 5px;">
+        </div>
+        
+        <h3>📋 לוג אירועים:</h3>
+        <div id="log"></div>
+    </div>
+    
+    <script>
+        let socket = null;
+        let isConnected = false;
+        
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString('he-IL');
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(`[${timestamp}] ${message}`);
+        }
+        
+        function updateStatus(connected, text) {
+            const statusDiv = document.getElementById('status');
+            const statusText = document.getElementById('statusText');
+            
+            if (connected) {
+                statusDiv.className = 'status online';
+                statusText.textContent = text || 'מחובר';
+            } else {
+                statusDiv.className = 'status offline';
+                statusText.textContent = text || 'לא מחובר';
+            }
+        }
+        
+        function updatePlayerCount(count) {
+            document.getElementById('playerCount').textContent = count;
+            log(`📊 עדכון מספר שחקנים: ${count}`);
+        }
+        
+        function connectToServer() {
+            if (isConnected) {
+                log('⚠️ כבר מחובר לשרת');
+                return;
+            }
+            
+            try {
+                log('🔗 מנסה להתחבר לשרת...');
+                socket = io();
+                setupSocketListeners();
+                
+            } catch (error) {
+                log('❌ שגיאה בהתחברות: ' + error.message);
+            }
+        }
+        
+        function setupSocketListeners() {
+            socket.on('connect', () => {
+                log('✅ התחברת לשרת בהצלחה!');
+                isConnected = true;
+                updateStatus(true, 'מחובר');
+                
+                // הצטרף למשחק
+                const playerName = document.getElementById('playerName').value || 'בודק1';
+                const playerData = {
+                    name: playerName,
+                    x: Math.random() * 2000 + 1000,
+                    y: Math.random() * 2000 + 1000,
+                    angle: 0,
+                    coins: 100,
+                    adminMode: false,
+                    explorerMode: false,
+                    equipped: {},
+                    ownedItems: []
+                };
+                
+                log(`📤 שולח playerJoin עם נתונים: ${playerName}`);
+                socket.emit('playerJoin', playerData);
+            });
+            
+            socket.on('disconnect', () => {
+                log('❌ נותק מהשרת');
+                isConnected = false;
+                updateStatus(false, 'נותק');
+            });
+            
+            socket.on('playerJoined', (playerData) => {
+                log(`👋 שחקן חדש הצטרף: ${playerData.name} (ID: ${playerData.id})`);
+            });
+            
+            socket.on('playerLeft', (playerId) => {
+                log(`👋 שחקן עזב: ${playerId}`);
+            });
+            
+            socket.on('playerCountUpdate', (count) => {
+                updatePlayerCount(count);
+            });
+            
+            socket.on('chatMessage', (messageData) => {
+                log(`💬 הודעת צ'אט מ-${messageData.playerName}: ${messageData.message}`);
+            });
+            
+            socket.on('gameState', (gameState) => {
+                log(`🎮 קיבלנו מצב משחק - מטבעות: ${gameState.coins.length}, מתנות: ${gameState.gifts.length}`);
+            });
+        }
+        
+        function disconnectFromServer() {
+            if (!isConnected || !socket) {
+                log('⚠️ לא מחובר לשרת');
+                return;
+            }
+            
+            log('🔌 מתנתק מהשרת...');
+            socket.disconnect();
+            socket = null;
+            isConnected = false;
+            updateStatus(false, 'התנתק');
+        }
+        
+        function sendTestMessage() {
+            if (!isConnected || !socket) {
+                log('❌ לא ניתן לשלוח הודעה - לא מחובר');
+                return;
+            }
+            
+            const message = document.getElementById('testMessage').value.trim() || 'הודעת בדיקה';
+            log(`📤 שולח הודעת בדיקה: ${message}`);
+            
+            socket.emit('chatMessage', {
+                message: message
+            });
+            
+            document.getElementById('testMessage').value = '';
+        }
+        
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
+        
+        // התחבר אוטומטית
+        window.addEventListener('load', () => {
+            log('🚀 דף נטען - ממתין להתחברות...');
+            setTimeout(() => {
+                connectToServer();
+            }, 1000);
+        });
+        
+        // התנתק בעת סגירת הדף
+        window.addEventListener('beforeunload', () => {
+            if (socket) {
+                socket.disconnect();
+            }
+        });
+    </script>
+</body>
+</html>

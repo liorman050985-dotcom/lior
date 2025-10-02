@@ -65,6 +65,7 @@ io.on('connection', (socket) => {
   console.log(`📍 IP: ${clientIP} (${connectionType})`);
   console.log(`🖥️ דפדפן: ${userAgent.substring(0, 50)}${userAgent.length > 50 ? '...' : ''}`);
   console.log(`🕰️ זמן חיבור: ${new Date().toLocaleString('he-IL')}`);
+  console.log(`📊 מספר חיבורים פעילים: ${players.size}`);
   console.log('---');
 
   // Handle player join
@@ -96,7 +97,11 @@ io.on('connection', (socket) => {
     // Notify other players
     socket.broadcast.emit('playerJoined', player);
     
-    console.log(`✅ ${player.name} הצטרף למשחק`);
+    // Broadcast updated player count to all players
+    const playerCount = players.size;
+    io.emit('playerCountUpdate', playerCount);
+    
+    console.log(`✅ ${player.name} הצטרף למשחק (סה"כ שחקנים: ${playerCount})`);
   });
 
   // Handle player movement
@@ -258,6 +263,12 @@ io.on('connection', (socket) => {
       
       // Remove player
       players.delete(socket.id);
+      
+      // Broadcast updated player count to all remaining players
+      const playerCount = players.size;
+      io.emit('playerCountUpdate', playerCount);
+      
+      console.log(`📊 עדכון מספר שחקנים: ${playerCount}`);
     }
   });
 
@@ -275,6 +286,10 @@ setInterval(() => {
       console.log(`🧹 מנקה שחקן לא פעיל: ${player.name}`);
       players.delete(id);
       io.emit('playerLeft', id);
+      
+      // Broadcast updated player count
+      const playerCount = players.size;
+      io.emit('playerCountUpdate', playerCount);
     }
   }
 }, 30000);
